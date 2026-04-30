@@ -1,10 +1,12 @@
 module;
 
 #include <common.hxx>
+#include <Zydis.h>
 
 export module common;
 
 import <stacktrace>;
+import <optional>;
 
 export class FusionFix
 {
@@ -16,12 +18,13 @@ public:
         using std::function<void(Args...)>::function;
 
     private:
-        std::vector<std::function<void(Args...)>> handlers;
+        std::list<std::function<void(Args...)>> handlers;
 
     public:
-        void operator+=(std::function<void(Args...)>&& handler)
+        auto operator+=(std::function<void(Args...)>&& handler) -> std::function<void()>
         {
-            handlers.push_back(handler);
+            auto it = handlers.insert(handlers.end(), std::move(handler));
+            return [this, it]() { handlers.erase(it); };
         }
 
         void executeAll(Args... args) const
@@ -50,53 +53,65 @@ public:
     };
 
 public:
-    static Event<>& onInitEvent() {
+    static Event<>& onInitEvent()
+    {
         static Event<> InitEvent;
         return InitEvent;
     }
-    static Event<>& onInitEventAsync() {
+    static Event<>& onInitEventAsync()
+    {
         static Event<> InitEventAsync;
         return InitEventAsync;
     }
-    static Event<>& onAfterUALRestoredIATEvent() {
-        static Event<> AfterUALRestoredIATEvent;
-        return AfterUALRestoredIATEvent;
-    }
-    static Event<>& onShutdownEvent() {
+    static Event<>& onShutdownEvent()
+    {
         static Event<> ShutdownEvent;
         return ShutdownEvent;
     }
-    static Event<>& onGameInitEvent() {
+    static Event<>& onGameInitEvent()
+    {
         static Event<> GameInitEvent;
         return GameInitEvent;
     }
-    static Event<>& onGameProcessEvent() {
+    static Event<>& onGameProcessEvent()
+    {
         static Event<> GameProcessEvent;
         return GameProcessEvent;
     }
-    static Event<>& onMenuDrawingEvent() {
+    static Event<>& onMenuDrawingEvent()
+    {
         static Event<> MenuDrawingEvent;
         return MenuDrawingEvent;
     }
-    static Event<>& onMenuEnterEvent() {
+    static Event<>& onMenuEnterEvent()
+    {
         static Event<> MenuEnterEvent;
         return MenuEnterEvent;
     }
-    static Event<>& onMenuExitEvent() {
+    static Event<>& onMenuExitEvent()
+    {
         static Event<> MenuExitEvent;
         return MenuExitEvent;
     }
-    static Event<bool>& onActivateApp() {
+    static Event<bool>& onActivateApp()
+    {
         static Event<bool> ActivateApp;
         return ActivateApp;
     }
-    static Event<>& onBeforeReset() {
+    static Event<>& onBeforeReset()
+    {
         static Event<> BeforeReset;
         return BeforeReset;
     }
-    static Event<>& onEndScene() {
+    static Event<>& onEndScene()
+    {
         static Event<> EndScene;
         return EndScene;
+    }
+    static Event<>& onReadGameConfig()
+    {
+        static Event<> ReadGameConfig;
+        return ReadGameConfig;
     }
     //static Event<>& onAfterReset() {
     //    static Event<> AfterReset;
@@ -111,95 +126,119 @@ public:
     //    return AfterPostFX;
     //}
 
-    struct D3D9 {
-        [[deprecated]] static Event<LPDIRECT3D9&, UINT&, D3DDEVTYPE&, HWND&, DWORD&, D3DPRESENT_PARAMETERS*&, IDirect3DDevice9**&>& onBeforeCreateDevice() {
+    struct D3D9
+    {
+        [[deprecated]] static Event<LPDIRECT3D9&, UINT&, D3DDEVTYPE&, HWND&, DWORD&, D3DPRESENT_PARAMETERS*&, IDirect3DDevice9**&>& onBeforeCreateDevice()
+        {
             static Event<LPDIRECT3D9&, UINT&, D3DDEVTYPE&, HWND&, DWORD&, D3DPRESENT_PARAMETERS*&, IDirect3DDevice9**&> BeforeCreateDevice;
             return BeforeCreateDevice;
         }
-        [[deprecated]] static Event<LPDIRECT3D9&, UINT&, D3DDEVTYPE&, HWND&, DWORD&, D3DPRESENT_PARAMETERS*&, IDirect3DDevice9**&>& onAfterCreateDevice() {
+        [[deprecated]] static Event<LPDIRECT3D9&, UINT&, D3DDEVTYPE&, HWND&, DWORD&, D3DPRESENT_PARAMETERS*&, IDirect3DDevice9**&>& onAfterCreateDevice()
+        {
             static Event<LPDIRECT3D9&, UINT&, D3DDEVTYPE&, HWND&, DWORD&, D3DPRESENT_PARAMETERS*&, IDirect3DDevice9**&> AfterCreateDevice;
             return AfterCreateDevice;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&>& onBeginScene() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&>& onBeginScene()
+        {
             static Event<LPDIRECT3DDEVICE9&> BeginScene;
             return BeginScene;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&>& onEndScene() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&>& onEndScene()
+        {
             static Event<LPDIRECT3DDEVICE9&> EndScene;
             return EndScene;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, D3DPRESENT_PARAMETERS*&>& onBeforeReset() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, D3DPRESENT_PARAMETERS*&>& onBeforeReset()
+        {
             static Event<LPDIRECT3DDEVICE9&, D3DPRESENT_PARAMETERS*&> BeforeReset;
             return BeforeReset;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, D3DPRESENT_PARAMETERS*&>& onAfterReset() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, D3DPRESENT_PARAMETERS*&>& onAfterReset()
+        {
             static Event<LPDIRECT3DDEVICE9&, D3DPRESENT_PARAMETERS*&> AfterReset;
             return AfterReset;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, IDirect3DPixelShader9*&>& onBeforeSetPixelShader() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, IDirect3DPixelShader9*&>& onBeforeSetPixelShader()
+        {
             static Event<LPDIRECT3DDEVICE9&, IDirect3DPixelShader9*&> BeforeSetPixelShader;
             return BeforeSetPixelShader;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, IDirect3DPixelShader9*&>& onAfterSetPixelShader() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, IDirect3DPixelShader9*&>& onAfterSetPixelShader()
+        {
             static Event<LPDIRECT3DDEVICE9&, IDirect3DPixelShader9*&> AfterSetPixelShader;
             return AfterSetPixelShader;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, IDirect3DVertexShader9*&>& onBeforeSetVertexShader() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, IDirect3DVertexShader9*&>& onBeforeSetVertexShader()
+        {
             static Event<LPDIRECT3DDEVICE9&, IDirect3DVertexShader9*&> BeforeSetVertexShader;
             return BeforeSetVertexShader;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, IDirect3DVertexShader9*&>& onAfterSetVertexShader() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, IDirect3DVertexShader9*&>& onAfterSetVertexShader()
+        {
             static Event<LPDIRECT3DDEVICE9&, IDirect3DVertexShader9*&> AfterSetVertexShader;
             return AfterSetVertexShader;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, UINT&, float*&, UINT&>& onSetVertexShaderConstantF() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, UINT&, float*&, UINT&>& onSetVertexShaderConstantF()
+        {
             static Event<LPDIRECT3DDEVICE9&, UINT&, float*&, UINT&> SetVertexShaderConstantF;
             return SetVertexShaderConstantF;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, UINT&, float*&, UINT&>& onSetPixelShaderConstantF() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, UINT&, float*&, UINT&>& onSetPixelShaderConstantF()
+        {
             static Event<LPDIRECT3DDEVICE9&, UINT&, float*&, UINT&> SetPixelShaderConstantF;
             return SetPixelShaderConstantF;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, DWORD*&, IDirect3DPixelShader9**&>& onBeforeCreatePixelShader() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, DWORD*&, IDirect3DPixelShader9**&>& onBeforeCreatePixelShader()
+        {
             static Event<LPDIRECT3DDEVICE9&, DWORD*&, IDirect3DPixelShader9**&> BeforeCreatePixelShader;
             return BeforeCreatePixelShader;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, DWORD*&, IDirect3DPixelShader9**&>& onAfterCreatePixelShader() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, DWORD*&, IDirect3DPixelShader9**&>& onAfterCreatePixelShader()
+        {
             static Event<LPDIRECT3DDEVICE9&, DWORD*&, IDirect3DPixelShader9**&> AfterCreatePixelShader;
             return AfterCreatePixelShader;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, DWORD*&, IDirect3DVertexShader9**&>& onBeforeCreateVertexShader() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, DWORD*&, IDirect3DVertexShader9**&>& onBeforeCreateVertexShader()
+        {
             static Event<LPDIRECT3DDEVICE9&, DWORD*&, IDirect3DVertexShader9**&> BeforeCreateVertexShader;
             return BeforeCreateVertexShader;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, DWORD*&, IDirect3DVertexShader9**&>& onAfterCreateVertexShader() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, DWORD*&, IDirect3DVertexShader9**&>& onAfterCreateVertexShader()
+        {
             static Event<LPDIRECT3DDEVICE9&, DWORD*&, IDirect3DVertexShader9**&> AfterCreateVertexShader;
             return AfterCreateVertexShader;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, UINT&, UINT&, UINT&, DWORD&, D3DFORMAT&, D3DPOOL&, IDirect3DTexture9**&, HANDLE*&>& onBeforeCreateTexture() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, UINT&, UINT&, UINT&, DWORD&, D3DFORMAT&, D3DPOOL&, IDirect3DTexture9**&, HANDLE*&>& onBeforeCreateTexture()
+        {
             static Event<LPDIRECT3DDEVICE9&, UINT&, UINT&, UINT&, DWORD&, D3DFORMAT&, D3DPOOL&, IDirect3DTexture9**&, HANDLE*&> BeforeCreateTexture;
             return BeforeCreateTexture;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, UINT&, UINT&, UINT&, DWORD&, D3DFORMAT&, D3DPOOL&, IDirect3DTexture9**&, HANDLE*&>& onAfterCreateTexture() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, UINT&, UINT&, UINT&, DWORD&, D3DFORMAT&, D3DPOOL&, IDirect3DTexture9**&, HANDLE*&>& onAfterCreateTexture()
+        {
             static Event<LPDIRECT3DDEVICE9&, UINT&, UINT&, UINT&, DWORD&, D3DFORMAT&, D3DPOOL&, IDirect3DTexture9**&, HANDLE*&> AfterCreateTexture;
             return AfterCreateTexture;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, DWORD&, IDirect3DBaseTexture9*&>& onSetTexture() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, DWORD&, IDirect3DBaseTexture9*&>& onSetTexture()
+        {
             static Event<LPDIRECT3DDEVICE9&, DWORD&, IDirect3DBaseTexture9*&> SetTexture;
             return SetTexture;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, D3DPRIMITIVETYPE&, UINT&, UINT&>& onBeforeDrawPrimitive() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, D3DPRIMITIVETYPE&, UINT&, UINT&>& onBeforeDrawPrimitive()
+        {
             static Event<LPDIRECT3DDEVICE9&, D3DPRIMITIVETYPE&, UINT&, UINT&> BeforeDrawPrimitive;
             return BeforeDrawPrimitive;
         }
-        [[deprecated]] static bool& isInsteadDrawPrimitive() {
+        [[deprecated]] static bool& isInsteadDrawPrimitive()
+        {
             static bool InsteadDrawPrimitive = false;
             return InsteadDrawPrimitive;
         }
-        [[deprecated]] static void setInsteadDrawPrimitive(bool set) {
+        [[deprecated]] static void setInsteadDrawPrimitive(bool set)
+        {
             isInsteadDrawPrimitive() = set;
         }
-        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, D3DPRIMITIVETYPE&, UINT&, UINT&>& onAfterDrawPrimitive() {
+        [[deprecated]] static Event<LPDIRECT3DDEVICE9&, D3DPRIMITIVETYPE&, UINT&, UINT&>& onAfterDrawPrimitive()
+        {
             static Event<LPDIRECT3DDEVICE9&, D3DPRIMITIVETYPE&, UINT&, UINT&> AfterDrawPrimitive;
             return AfterDrawPrimitive;
         }
@@ -316,14 +355,93 @@ T GetExeModuleName()
         return moduleFileName.substr(moduleFileName.find_last_of(L"/\\") + 1);
 }
 
-export template <typename T, typename V>
-bool iequals(const T& s1, const V& s2)
+export bool iequals(std::string_view s1, std::string_view s2)
 {
-    T str1(s1); T str2(s2);
-    std::transform(str1.begin(), str1.end(), str1.begin(), ::tolower);
-    std::transform(str2.begin(), str2.end(), str2.begin(), ::tolower);
-    return (str1 == str2);
+    if (s1.size() != s2.size()) return false;
+    return std::equal(s1.begin(), s1.end(), s2.begin(), s2.end(),
+        [](char a, char b) { return ::tolower(a) == ::tolower(b); });
 }
+
+export bool iequals(std::wstring_view s1, std::wstring_view s2)
+{
+    if (s1.size() != s2.size()) return false;
+    return std::equal(s1.begin(), s1.end(), s2.begin(), s2.end(),
+        [](wchar_t a, wchar_t b) { return ::towlower(a) == ::towlower(b); });
+}
+
+export std::filesystem::path lexicallyRelativeCaseIns(const std::filesystem::path& path, const std::filesystem::path& base)
+{
+    class input_iterator_range
+    {
+    public:
+        input_iterator_range(const std::filesystem::path::const_iterator& first, const std::filesystem::path::const_iterator& last)
+            : _first(first)
+            , _last(last)
+        {
+        }
+        std::filesystem::path::const_iterator begin() const
+        {
+            return _first;
+        }
+        std::filesystem::path::const_iterator end() const
+        {
+            return _last;
+        }
+    private:
+        std::filesystem::path::const_iterator _first;
+        std::filesystem::path::const_iterator _last;
+    };
+
+    if (!iequals(path.root_name().wstring(), base.root_name().wstring()) || path.is_absolute() != base.is_absolute() || (!path.has_root_directory() && base.has_root_directory()))
+    {
+        return std::filesystem::path();
+    }
+
+    std::filesystem::path::const_iterator a = path.begin(), b = base.begin();
+
+    while (a != path.end() && b != base.end() && iequals(a->wstring(), b->wstring()))
+    {
+        ++a;
+        ++b;
+    }
+
+    if (a == path.end() && b == base.end())
+    {
+        return std::filesystem::path(".");
+    }
+
+    int count = 0;
+
+    for (const auto& element : input_iterator_range(b, base.end()))
+    {
+        if (element != "." && element != "" && element != "..")
+        {
+            ++count;
+        }
+        else if (element == "..")
+        {
+            --count;
+        }
+    }
+
+    if (count < 0)
+    {
+        return std::filesystem::path();
+    }
+
+    std::filesystem::path result;
+    for (int i = 0; i < count; ++i)
+    {
+        result /= "..";
+    }
+
+    for (const auto& element : input_iterator_range(a, path.end()))
+    {
+        result /= element;
+    }
+
+    return result;
+};
 
 export inline void CreateThreadAutoClose(LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId)
 {
@@ -337,10 +455,13 @@ export inline bool IsModuleUAL(HMODULE mod)
     return false;
 }
 
-export bool IsUALPresent() {
-    for (const auto& entry : std::stacktrace::current()) {
+export bool IsUALPresent()
+{
+    for (const auto& entry : std::stacktrace::current())
+    {
         HMODULE hModule = NULL;
-        if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR)entry.native_handle(), &hModule)) {
+        if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR)entry.native_handle(), &hModule))
+        {
             if (IsModuleUAL(hModule))
                 return true;
         }
@@ -391,12 +512,12 @@ public:
             if (ptr == nullptr)
                 ptr = (uint32_t*)((DWORD)mh + ntHeader->OptionalHeader.BaseOfCode + ntHeader->OptionalHeader.SizeOfCode - offset);
             std::thread([](std::function<void()>&& fn, uint32_t* ptr, uint32_t val)
-                {
-                    while (*ptr == val)
-                        std::this_thread::yield();
+            {
+                while (*ptr == val)
+                    std::this_thread::yield();
 
-                    fn();
-                }, fn, ptr, *ptr).detach();
+                fn();
+            }, fn, ptr, *ptr).detach();
         }
     }
 
@@ -745,9 +866,11 @@ std::string pattern_str(T t, Rest... rest)
     return std::string((std::is_same<T, char>::value ? format("%c ", t) : format("%02X ", t)) + pattern_str(rest...));
 }
 
-export std::string pattern_str(std::string_view str) {
+export std::string pattern_str(std::string_view str)
+{
     std::stringstream str_stream;
-    for (const auto& item : str) {
+    for (const auto& item : str)
+    {
         str_stream << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << +uint8_t(item) << " ";
     }
     return str_stream.str();
@@ -757,78 +880,213 @@ export class IATHook
 {
 public:
     template <class... Ts>
-    static void Replace(HMODULE target_module, std::string_view dll_name, Ts&& ... inputs)
+    static auto Replace(HMODULE target_module, std::string_view dll_name, Ts&& ... inputs)
     {
-        auto hExecutableInstance = (size_t)target_module;
-        IMAGE_NT_HEADERS* ntHeader = (IMAGE_NT_HEADERS*)(hExecutableInstance + ((IMAGE_DOS_HEADER*)hExecutableInstance)->e_lfanew);
-        IMAGE_IMPORT_DESCRIPTOR* pImports = (IMAGE_IMPORT_DESCRIPTOR*)(hExecutableInstance + ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
-        size_t nNumImports = ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size / sizeof(IMAGE_IMPORT_DESCRIPTOR) - 1;
-    
-        auto PatchIAT = [&](size_t start, size_t end, size_t exe_end)
-        {
-            for (size_t i = 0; i < nNumImports; i++)
-            {
-                if (hExecutableInstance + (pImports + i)->FirstThunk > start && !(end && hExecutableInstance + (pImports + i)->FirstThunk > end))
-                    end = hExecutableInstance + (pImports + i)->FirstThunk;
-            }
-    
-            if (!end) { end = start + 0x100; }
-            if (end > exe_end)
-            {
-                start = hExecutableInstance;
-                end = exe_end;
-            }
-    
-            for (auto i = start; i < end; i += sizeof(size_t))
-            {
-                DWORD dwProtect[2];
-                VirtualProtect((size_t*)i, sizeof(size_t), PAGE_EXECUTE_READWRITE, &dwProtect[0]);
-    
-                auto ptr = *(size_t*)i;
-                if (!ptr)
-                    continue;
-    
-                ([&]
-                {
-                    auto func_name = std::get<0>(inputs);
-                    auto func_hook = std::get<1>(inputs);
-                    if (func_hook && ptr == (size_t)GetProcAddress(GetModuleHandleA(dll_name.data()), func_name))
-                        *(size_t*)i = (size_t)func_hook;
-                } (), ...);
+        std::map<std::string, std::future<void*>> originalPtrs;
 
-                VirtualProtect((size_t*)i, sizeof(size_t), dwProtect[0], &dwProtect[1]);
-            }
-        };
-    
-        static auto getSection = [](const PIMAGE_NT_HEADERS nt_headers, unsigned section) -> PIMAGE_SECTION_HEADER
+        const DWORD_PTR instance = reinterpret_cast<DWORD_PTR>(target_module);
+        const PIMAGE_NT_HEADERS ntHeader = reinterpret_cast<PIMAGE_NT_HEADERS>(instance + reinterpret_cast<PIMAGE_DOS_HEADER>(instance)->e_lfanew);
+        PIMAGE_IMPORT_DESCRIPTOR pImports = reinterpret_cast<PIMAGE_IMPORT_DESCRIPTOR>(instance + ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+        DWORD dwProtect[2];
+
+        // Regular imports
+        for (; pImports->Name != 0; pImports++)
         {
-            return reinterpret_cast<PIMAGE_SECTION_HEADER>(
-                (UCHAR*)nt_headers->OptionalHeader.DataDirectory +
-                nt_headers->OptionalHeader.NumberOfRvaAndSizes * sizeof(IMAGE_DATA_DIRECTORY) +
-                section * sizeof(IMAGE_SECTION_HEADER));
-        };
-    
-        static auto getSectionEnd = [](IMAGE_NT_HEADERS* ntHeader, size_t inst) -> auto
-        {
-            auto sec = getSection(ntHeader, ntHeader->FileHeader.NumberOfSections - 1);
-            while (sec->Misc.VirtualSize == 0) sec--;
-    
-            auto secSize = max(sec->SizeOfRawData, sec->Misc.VirtualSize);
-            auto end = inst + max(sec->PointerToRawData, sec->VirtualAddress) + secSize;
-            return end;
-        };
-    
-        auto hExecutableInstance_end = getSectionEnd(ntHeader, hExecutableInstance);
-    
-        // Find DLL
-        for (size_t i = 0; i < nNumImports; i++)
-        {
-            if ((size_t)(hExecutableInstance + (pImports + i)->Name) < hExecutableInstance_end)
+            if (_stricmp(reinterpret_cast<const char*>(instance + pImports->Name), dll_name.data()) == 0)
             {
-                if (!_stricmp((const char*)(hExecutableInstance + (pImports + i)->Name), dll_name.data()))
-                    PatchIAT(hExecutableInstance + (pImports + i)->FirstThunk, 0, hExecutableInstance_end);
+                if (pImports->OriginalFirstThunk != 0)
+                {
+                    const PIMAGE_THUNK_DATA pThunk = reinterpret_cast<PIMAGE_THUNK_DATA>(instance + pImports->OriginalFirstThunk);
+
+                    for (ptrdiff_t j = 0; pThunk[j].u1.AddressOfData != 0; j++)
+                    {
+                        auto pAddress = reinterpret_cast<void**>(instance + pImports->FirstThunk) + j;
+                        if (!pAddress) continue;
+                        VirtualProtect(pAddress, sizeof(void*), PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+                        ([&]
+                        {
+                            auto name = std::string_view(std::get<0>(inputs));
+                            auto num = std::string("-1");
+                            if (name.contains("@"))
+                            {
+                                num = name.substr(name.find_last_of("@") + 1);
+                                name = name.substr(0, name.find_last_of("@"));
+                            }
+
+                            if (pThunk[j].u1.Ordinal & IMAGE_ORDINAL_FLAG)
+                            {
+                                try
+                                {
+                                    if (IMAGE_ORDINAL(pThunk[j].u1.Ordinal) == std::stoi(num.data()))
+                                    {
+                                        originalPtrs[std::get<0>(inputs)] = std::async(std::launch::deferred, [&]() -> void* { return *pAddress; });
+                                        originalPtrs[std::get<0>(inputs)].wait();
+                                        *pAddress = std::get<1>(inputs);
+                                    }
+                                } catch (...) {}
+                            }
+                            else if ((*pAddress && *pAddress == (void*)GetProcAddress(GetModuleHandleA(dll_name.data()), name.data())) ||
+                            (strcmp(reinterpret_cast<PIMAGE_IMPORT_BY_NAME>(instance + pThunk[j].u1.AddressOfData)->Name, name.data()) == 0))
+                            {
+                                originalPtrs[std::get<0>(inputs)] = std::async(std::launch::deferred, [&]() -> void* { return *pAddress; });
+                                originalPtrs[std::get<0>(inputs)].wait();
+                                *pAddress = std::get<1>(inputs);
+                            }
+                        } (), ...);
+                        VirtualProtect(pAddress, sizeof(void*), dwProtect[0], &dwProtect[1]);
+                    }
+                }
+                else
+                {
+                    auto pFunctions = reinterpret_cast<void**>(instance + pImports->FirstThunk);
+
+                    for (ptrdiff_t j = 0; pFunctions[j] != nullptr; j++)
+                    {
+                        auto pAddress = &pFunctions[j];
+                        VirtualProtect(pAddress, sizeof(void*), PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+                        ([&]
+                        {
+                            if (*pAddress && *pAddress == (void*)GetProcAddress(GetModuleHandleA(dll_name.data()), std::get<0>(inputs)))
+                            {
+                                originalPtrs[std::get<0>(inputs)] = std::async(std::launch::deferred, [&]() -> void* { return *pAddress; });
+                                originalPtrs[std::get<0>(inputs)].wait();
+                                *pAddress = std::get<1>(inputs);
+                            }
+                        } (), ...);
+                        VirtualProtect(pAddress, sizeof(void*), dwProtect[0], &dwProtect[1]);
+                    }
+                }
             }
         }
+
+        // Delay imports
+        PIMAGE_DELAYLOAD_DESCRIPTOR pDelayed = reinterpret_cast<PIMAGE_DELAYLOAD_DESCRIPTOR>(instance + ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT].VirtualAddress);
+        if (pDelayed && ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT].VirtualAddress != 0 && ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT].Size != 0)
+        {
+            for (; pDelayed->DllNameRVA != 0; pDelayed++)
+            {
+                if (_stricmp(reinterpret_cast<const char*>(instance + pDelayed->DllNameRVA), dll_name.data()) == 0)
+                {
+                    if (pDelayed->ImportAddressTableRVA != 0)
+                    {
+                        const PIMAGE_THUNK_DATA pThunk = reinterpret_cast<PIMAGE_THUNK_DATA>(instance + pDelayed->ImportNameTableRVA);
+                        const PIMAGE_THUNK_DATA pFThunk = reinterpret_cast<PIMAGE_THUNK_DATA>(instance + pDelayed->ImportAddressTableRVA);
+
+                        for (ptrdiff_t j = 0; pThunk[j].u1.AddressOfData != 0; j++)
+                        {
+                            auto pAddress = reinterpret_cast<void**>(&pFThunk[j].u1.Function);
+                            if (!pAddress) continue;
+                            VirtualProtect(pAddress, sizeof(void*), PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+                            ([&]
+                            {
+                                auto name = std::string_view(std::get<0>(inputs));
+                                auto num = std::string("-1");
+                                if (name.contains("@"))
+                                {
+                                    num = name.substr(name.find_last_of("@") + 1);
+                                    name = name.substr(0, name.find_last_of("@"));
+                                }
+
+                                if (pThunk[j].u1.Ordinal & IMAGE_ORDINAL_FLAG)
+                                {
+                                    try
+                                    {
+                                        if (IMAGE_ORDINAL(pThunk[j].u1.Ordinal) == std::stoi(num.data()))
+                                        {
+                                            originalPtrs[std::get<0>(inputs)] = std::async(std::launch::async,
+                                            [](void** pAddress, void* value, PVOID instance) -> void*
+                                            {
+                                                DWORD dwProtect[2];
+                                                VirtualProtect(pAddress, sizeof(void*), PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+                                                MEMORY_BASIC_INFORMATION mbi;
+                                                mbi.AllocationBase = instance;
+                                                do
+                                                {
+                                                    VirtualQuery(*pAddress, &mbi, sizeof(MEMORY_BASIC_INFORMATION));
+                                                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                                                } while (mbi.AllocationBase == instance);
+                                                auto r = *pAddress;
+                                                *pAddress = value;
+                                                VirtualProtect(pAddress, sizeof(void*), dwProtect[0], &dwProtect[1]);
+                                                return r;
+                                            }, pAddress, std::get<1>(inputs), (PVOID)instance);
+                                        }
+                                    } catch (...) {}
+                                }
+                                else if (strcmp(reinterpret_cast<PIMAGE_IMPORT_BY_NAME>(instance + pThunk[j].u1.AddressOfData)->Name, name.data()) == 0)
+                                {
+                                    originalPtrs[std::get<0>(inputs)] = std::async(std::launch::async,
+                                    [](void** pAddress, void* value, PVOID instance) -> void*
+                                    {
+                                        DWORD dwProtect[2];
+                                        VirtualProtect(pAddress, sizeof(void*), PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+                                        MEMORY_BASIC_INFORMATION mbi;
+                                        mbi.AllocationBase = instance;
+                                        do
+                                        {
+                                            VirtualQuery(*pAddress, &mbi, sizeof(MEMORY_BASIC_INFORMATION));
+                                            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                                        } while (mbi.AllocationBase == instance);
+                                        auto r = *pAddress;
+                                        *pAddress = value;
+                                        VirtualProtect(pAddress, sizeof(void*), dwProtect[0], &dwProtect[1]);
+                                        return r;
+                                    }, pAddress, std::get<1>(inputs), (PVOID)instance);
+                                }
+                            } (), ...);
+                            VirtualProtect(pAddress, sizeof(void*), dwProtect[0], &dwProtect[1]);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback section scan (e.g. re5dx9.exe steam)
+        if (originalPtrs.empty())
+        {
+            static auto getSection = [](const PIMAGE_NT_HEADERS nt_headers, unsigned section) -> PIMAGE_SECTION_HEADER
+            {
+                return reinterpret_cast<PIMAGE_SECTION_HEADER>(
+                    (UCHAR*)nt_headers->OptionalHeader.DataDirectory +
+                    nt_headers->OptionalHeader.NumberOfRvaAndSizes * sizeof(IMAGE_DATA_DIRECTORY) +
+                    section * sizeof(IMAGE_SECTION_HEADER));
+            };
+
+            for (auto i = 0; i < ntHeader->FileHeader.NumberOfSections; i++)
+            {
+                auto sec = getSection(ntHeader, i);
+                auto pFunctions = reinterpret_cast<void**>(instance + std::max(sec->PointerToRawData, sec->VirtualAddress));
+
+                for (ptrdiff_t j = 0; j < 300; j++)
+                {
+                    auto pAddress = &pFunctions[j];
+                    VirtualProtect(pAddress, sizeof(void*), PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+                    ([&]
+                    {
+                        auto name = std::string_view(std::get<0>(inputs));
+                        auto num = std::string("-1");
+                        if (name.contains("@"))
+                        {
+                            num = name.substr(name.find_last_of("@") + 1);
+                            name = name.substr(0, name.find_last_of("@"));
+                        }
+
+                        if (*pAddress && *pAddress == (void*)GetProcAddress(GetModuleHandleA(dll_name.data()), name.data()))
+                        {
+                            originalPtrs[std::get<0>(inputs)] = std::async(std::launch::deferred, [&]() -> void* { return *pAddress; });
+                            originalPtrs[std::get<0>(inputs)].wait();
+                            *pAddress = std::get<1>(inputs);
+                        }
+                    } (), ...);
+                    VirtualProtect(pAddress, sizeof(void*), dwProtect[0], &dwProtect[1]);
+                }
+
+                if (!originalPtrs.empty())
+                    return originalPtrs;
+            }
+        }
+
+        return originalPtrs;
     }
 };
 
@@ -862,4 +1120,264 @@ private:
     injector::memory_pointer ptr;
     std::vector<uint8_t> old_code;
     std::vector<uint8_t> new_code;
+};
+
+export std::optional<uintptr_t> resolve_displacement(auto ip)
+{
+    ZydisDecoder decoder;
+    #if defined(_M_X64) || defined(__x86_64__)
+    ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_STACK_WIDTH_64);
+    #else
+    ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LEGACY_32, ZYDIS_STACK_WIDTH_32);
+    #endif
+
+    ZydisDecodedInstruction instruction;
+    ZydisDecodedOperand operands[ZYDIS_MAX_OPERAND_COUNT];
+
+    ZyanStatus status = ZydisDecoderDecodeFull(
+        &decoder,
+        (void*)ip,
+        ZYDIS_MAX_INSTRUCTION_LENGTH,
+        &instruction,
+        operands
+    );
+
+    if (!ZYAN_SUCCESS(status))
+    {
+        return std::nullopt;
+    }
+
+    for (uint32_t i = 0; i < instruction.operand_count_visible; ++i)
+    {
+        const auto& operand = operands[i];
+
+        if (operand.type == ZYDIS_OPERAND_TYPE_MEMORY)
+        {
+            if (operand.mem.disp.has_displacement)
+            {
+                #if defined(_M_X64) || defined(__x86_64__)
+                if (operand.mem.is_rip_relative)
+                {
+                    return (uintptr_t)ip + instruction.length + operand.mem.disp.value;
+                }
+                #else
+                return static_cast<uintptr_t>(operand.mem.disp.value);
+                #endif
+            }
+        }
+        else if (operand.type == ZYDIS_OPERAND_TYPE_IMMEDIATE)
+        {
+            if (operand.imm.is_relative)
+            {
+                return (uintptr_t)ip + instruction.length + ZyanISize(operand.imm.value.s);
+            }
+        }
+    }
+
+    if (instruction.attributes & ZYDIS_ATTRIB_IS_RELATIVE && instruction.raw.disp.size > 0)
+    {
+        return (uintptr_t)ip + instruction.length + ZyanISize(instruction.raw.disp.value);
+    }
+
+    return std::nullopt;
+}
+
+export std::optional<uintptr_t> resolve_next_displacement(auto ip)
+{
+    ZydisDecoder decoder;
+    #if defined(_M_X64) || defined(__x86_64__)
+    ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_STACK_WIDTH_64);
+    #else
+    ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LEGACY_32, ZYDIS_STACK_WIDTH_32);
+    #endif
+
+    ZydisDecodedInstruction instruction;
+    ZydisDecodedOperand operands[ZYDIS_MAX_OPERAND_COUNT];
+
+    uintptr_t current_ip = (uintptr_t)ip;
+    size_t instruction_count = 0;
+
+    while (true)
+    {
+        ZyanStatus status = ZydisDecoderDecodeFull(
+            &decoder,
+            (void*)current_ip,
+            ZYDIS_MAX_INSTRUCTION_LENGTH,
+            &instruction,
+            operands
+        );
+
+        if (!ZYAN_SUCCESS(status))
+        {
+            return std::nullopt;
+        }
+
+        if (instruction.meta.category == ZYDIS_CATEGORY_COND_BR)
+        {
+            for (uint32_t i = 0; i < instruction.operand_count_visible; ++i)
+            {
+                const auto& operand = operands[i];
+
+                if (operand.type == ZYDIS_OPERAND_TYPE_MEMORY)
+                {
+                    if (operand.mem.disp.has_displacement)
+                    {
+                        #if defined(_M_X64) || defined(__x86_64__)
+                        if (operand.mem.is_rip_relative)
+                        {
+                            return current_ip + instruction.length + operand.mem.disp.value;
+                        }
+                        #else
+                        return static_cast<uintptr_t>(operand.mem.disp.value);
+                        #endif
+                    }
+                }
+                else if (operand.type == ZYDIS_OPERAND_TYPE_IMMEDIATE)
+                {
+                    if (operand.imm.is_relative)
+                    {
+                        return current_ip + instruction.length + ZyanISize(operand.imm.value.s);
+                    }
+                }
+            }
+
+            if (instruction.attributes & ZYDIS_ATTRIB_IS_RELATIVE && instruction.raw.disp.size > 0)
+            {
+                return current_ip + instruction.length + ZyanISize(instruction.raw.disp.value);
+            }
+
+            return std::nullopt;
+        }
+
+        current_ip += instruction.length;
+
+        constexpr size_t MAX_INSTRUCTIONS = 20;
+        if (++instruction_count >= MAX_INSTRUCTIONS)
+        {
+            return std::nullopt;
+        }
+    }
+
+    return std::nullopt;
+}
+
+export template<typename T>
+class GameRef
+{
+private:
+    std::optional<T*> ptr{ std::nullopt };
+
+public:
+    GameRef() = default;
+
+    void SetAddress(T* address)
+    {
+        if (address == nullptr)
+            throw std::invalid_argument("GameRef::SetAddress called with null pointer");
+
+        ptr = address;
+    }
+
+    T& get()
+    {
+        if (!ptr.has_value())
+        {
+            assert(false && "GameRef accessed before SetAddress()!");
+            throw std::runtime_error("GameRef accessed before SetAddress() was called");
+        }
+        return **ptr;
+    }
+
+    const T& get() const
+    {
+        if (!ptr.has_value())
+        {
+            assert(false && "GameRef accessed before SetAddress()!");
+            throw std::runtime_error("GameRef accessed before SetAddress() was called");
+        }
+        return **ptr;
+    }
+
+    bool is_initialized() const noexcept { return ptr.has_value(); }
+    T* get_ptr() noexcept { return ptr.value_or(nullptr); }
+    const T* get_ptr() const noexcept { return ptr.value_or(nullptr); }
+
+    operator T& () { return get(); }
+    operator const T& () const { return get(); }
+
+    T& operator=(const T& value)
+    {
+        *reinterpret_cast<volatile T*>(*ptr) = value;
+        return **ptr;
+    }
+    T& operator=(T&& value) { return get() = std::move(value); }
+
+    template<typename U> T& operator+=(const U& v) { return get() += v; }
+    template<typename U> T& operator-=(const U& v) { return get() -= v; }
+    template<typename U> T& operator*=(const U& v) { return get() *= v; }
+    template<typename U> T& operator/=(const U& v) { return get() /= v; }
+    template<typename U> T& operator%=(const U& v) { return get() %= v; }
+
+    template<typename U> T& operator&=(const U& v) { return get() &= v; }
+    template<typename U> T& operator|=(const U& v) { return get() |= v; }
+    template<typename U> T& operator^=(const U& v) { return get() ^= v; }
+    template<typename U> T& operator<<=(const U& v) { return get() <<= v; }
+    template<typename U> T& operator>>=(const U& v) { return get() >>= v; }
+
+    T& operator++() { return ++get(); }
+    T  operator++(int) { return get()++; }
+
+    T& operator--() { return --get(); }
+    T  operator--(int) { return get()--; }
+
+    T operator+() const { return +get(); }
+    T operator-() const { return -get(); }
+    bool operator!() const { return !get(); }
+    T operator~() const { return ~get(); }
+
+    template<typename U> auto operator+(const U& v) const { return get() + v; }
+    template<typename U> auto operator-(const U& v) const { return get() - v; }
+    template<typename U> auto operator*(const U& v) const { return get() * v; }
+    template<typename U> auto operator/(const U& v) const { return get() / v; }
+    template<typename U> auto operator%(const U& v) const { return get() % v; }
+
+    template<typename U> auto operator&(const U& v) const { return get() & v; }
+    template<typename U> auto operator|(const U& v) const { return get() | v; }
+    template<typename U> auto operator^(const U& v) const { return get() ^ v; }
+    template<typename U> auto operator<<(const U& v) const { return get() << v; }
+    template<typename U> auto operator>>(const U& v) const { return get() >> v; }
+
+    template<typename U> bool operator==(const U& v) const { return get() == v; }
+    template<typename U> bool operator!=(const U& v) const { return get() != v; }
+    template<typename U> bool operator<(const U& v)  const { return get() < v; }
+    template<typename U> bool operator>(const U& v)  const { return get() > v; }
+    template<typename U> bool operator<=(const U& v) const { return get() <= v; }
+    template<typename U> bool operator>=(const U& v) const { return get() >= v; }
+
+    T& operator*() { return get(); }
+    const T& operator*() const { return get(); }
+
+    auto operator->()
+    {
+        if constexpr (std::is_pointer_v<T>)
+            return get();
+        else
+            return &get();
+    }
+
+    auto operator->() const
+    {
+        if constexpr (std::is_pointer_v<T>)
+            return get();
+        else
+            return &get();
+    }
+
+    template<typename U>
+    auto operator[](const U& index) { return get()[index]; }
+
+    template<typename U>
+    auto operator[](const U& index) const { return get()[index]; }
+
+    explicit operator bool() const { return static_cast<bool>(get()); }
 };

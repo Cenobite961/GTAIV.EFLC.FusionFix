@@ -20,7 +20,10 @@ void AmbientLighting(bool bForce = false)
 
         if (Natives::GetCurrentEpisode() == 0)
         {
-            LogiLedSetLighting(94, 63, 0);
+            if (CText::hasViceCityStrings())
+                LogiLedSetLighting(99, 41, 98);
+            else
+                LogiLedSetLighting(94, 63, 0);
         }
         else if (Natives::GetCurrentEpisode() == 1)
         {
@@ -72,7 +75,7 @@ void WantedLevelSiren(bool bForce = false)
     bool bCarSirenActive = false;
     Ped pPlayerPed = 0;
     Vehicle pPlayerCar = 0;
-    Natives::GetPlayerChar(Natives::ConvertIntToPlayerindex(Natives::GetPlayerId()), &pPlayerPed);
+    Natives::GetPlayerChar(Natives::ConvertIntToPlayerIndex(Natives::GetPlayerId()), &pPlayerPed);
     if (pPlayerPed) {
         Natives::GetCarCharIsUsing(pPlayerPed, &pPlayerCar);
         if (pPlayerCar)
@@ -194,7 +197,7 @@ void AmmoInClip()
 
     Ped pPlayerPed = 0;
     uint32_t pPlayerWeapon = 0;
-    Natives::GetPlayerChar(Natives::ConvertIntToPlayerindex(Natives::GetPlayerId()), &pPlayerPed);
+    Natives::GetPlayerChar(Natives::ConvertIntToPlayerIndex(Natives::GetPlayerId()), &pPlayerPed);
     if (pPlayerPed)
         Natives::GetCurrentCharWeapon(pPlayerPed, &pPlayerWeapon);
     
@@ -232,7 +235,7 @@ void CurrentHealth(bool bForce = false)
 
     Ped pPlayerPed = 0;
     uint32_t pPlayerHealth = 0;
-    Natives::GetPlayerChar(Natives::ConvertIntToPlayerindex(Natives::GetPlayerId()), &pPlayerPed);
+    Natives::GetPlayerChar(Natives::ConvertIntToPlayerIndex(Natives::GetPlayerId()), &pPlayerPed);
     if (pPlayerPed)
     {
         Natives::GetCharHealth(pPlayerPed, &pPlayerHealth);
@@ -252,8 +255,13 @@ void CurrentHealth(bool bForce = false)
                     {
                         LogiLedSetLightingForKeyWithKeyName(keys[i], 100, 0, 0);
                     }
-                    else if(Natives::GetCurrentEpisode() == 0)
-                        LogiLedSetLightingForKeyWithKeyName(keys[i], 34, 49, 35);
+                    else if (Natives::GetCurrentEpisode() == 0)
+                    {
+                        if (CText::hasViceCityStrings())
+                            LogiLedSetLightingForKeyWithKeyName(keys[i], 97, 22, 75);
+                        else
+                            LogiLedSetLightingForKeyWithKeyName(keys[i], 34, 49, 35);
+                    }
                     else if (Natives::GetCurrentEpisode() == 1)
                         LogiLedSetLightingForKeyWithKeyName(keys[i], 59, 61, 61);
                     else if (Natives::GetCurrentEpisode() == 2)

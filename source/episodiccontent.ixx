@@ -5,6 +5,18 @@ module;
 export module episodiccontent;
 
 import common;
+import settings;
+
+namespace CEpisodes
+{
+    injector::hook_back<char(__fastcall*)(void*, void*, int)> hbisAvailable;
+    char __fastcall isAvailable(void* _this, void* edx, int a2)
+    {
+        if (CText::hasViceCityStrings())
+            return 0;
+        return hbisAvailable.fun(_this, edx, a2);
+    }
+}
 
 class EpisodicContent
 {
@@ -83,6 +95,14 @@ public:
                     injector::MakeNOP(pattern.get_first(7), 2, true);
                 else {
                     pattern = hook::pattern("83 3D ? ? ? ? ? 75 1B 8B 56 40");
+                    injector::MakeNOP(pattern.get_first(7), 2, true);
+                }
+
+                pattern = hook::pattern("83 3D ? ? ? ? ? 75 21 8B 87"); // APC rotation sound
+                if (!pattern.empty())
+                    injector::MakeNOP(pattern.get_first(7), 2, true);
+                else {
+                    pattern = hook::pattern("83 3D ? ? ? ? ? 75 21 8B 96");
                     injector::MakeNOP(pattern.get_first(7), 2, true);
                 }
 
@@ -538,6 +558,16 @@ public:
                     pattern = hook::pattern("39 3D ? ? ? ? 0F 85 ? ? ? ? 66 83 7E");
                     injector::MakeNOP(pattern.get_first(6), 6, true);
                 }
+
+                pattern = find_pattern("7E ? 8D 7C 24 ? 57", "7E ? 8D 7C 24 ? 8B FF");
+                static auto loc_9BB987 = resolve_displacement(pattern.get_first(0)).value();
+
+                pattern = find_pattern("8B 48 ? 85 C9 74 ? 8B 81 ? ? ? ? EB ? 8B 40 ? 85 C0 74 ? 8B 00 89 04 B5", "8B 48 ? 83 C4 ? 85 C9 74 ? 8B 81");
+                static auto NoAssetsCrashWorkaround = safetyhook::create_mid(pattern.get_first(), [](SafetyHookContext& regs)
+                {
+                    if (!regs.eax)
+                        return_to(loc_9BB987);
+                });
             }
 
             if (bTBoGTHelicopterHeightLimit)
@@ -571,6 +601,20 @@ public:
                 auto pattern = hook::pattern("85 DB 74 1E A1 ? ? ? ? 85 C0 74 15 3B D8 74 11");
                 if (!pattern.empty())
                     injector::WriteMemory<uint8_t>(pattern.get_first(2), 0xEB, true);
+            }
+
+            {
+                auto pattern = hook::pattern("E8 ? ? ? ? 84 C0 75 ? 8B 0D ? ? ? ? 6A ? E8 ? ? ? ? 84 C0 75 ? A2");
+                if (!pattern.empty())
+                    CEpisodes::hbisAvailable.fun = injector::MakeCALL(pattern.get_first(), CEpisodes::isAvailable).get();
+
+                pattern = hook::pattern("E8 ? ? ? ? 84 C0 75 ? A2 ? ? ? ? C6 05 ? ? ? ? ? A2 ? ? ? ? E8 ? ? ? ? C7 05");
+                if (!pattern.empty())
+                    CEpisodes::hbisAvailable.fun = injector::MakeCALL(pattern.get_first(), CEpisodes::isAvailable).get();
+
+                pattern = hook::pattern("E8 ? ? ? ? 84 C0 75 ? 46 83 FE ? 7C ? 83 C8");
+                if (!pattern.empty())
+                    CEpisodes::hbisAvailable.fun = injector::MakeCALL(pattern.get_first(), CEpisodes::isAvailable).get();
             }
         };
     }

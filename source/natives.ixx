@@ -53,7 +53,8 @@ export struct Vector4
     float fW;
 };
 
-export struct Color32 {
+export struct Color32
+{
     uint8_t b;
     uint8_t g;
     uint8_t r;
@@ -169,7 +170,7 @@ public:
     {
         if (getNativeAddress)
             return reinterpret_cast<ncall>(getNativeAddress(Hash));
-        
+
         auto ms_pNatives = *rage::scrEngine::ms_pNatives;
         auto ms_dwNativeTableSize = *rage::scrEngine::ms_dwNativeTableSize;
 
@@ -209,7 +210,8 @@ public:
             if (!m_IndexTable[Index])
             {
                 auto fn = GetNativeHandler(Hash);
-                if (fn) {
+                if (fn)
+                {
                     m_IndexTable[Index] = fn;
                     fn(&cxt);
                 }
@@ -230,7 +232,8 @@ public:
 export class Natives
 {
 public:
-    enum class NativeHashes : uint32_t {
+    enum class NativeHashes : uint32_t
+    {
         ABORT_ALL_GARAGE_ACTIVITY = 0x5DB95843,
         ABORT_SCRIPTED_CONVERSATION = 0x57DB70CE,
         ABSF = 0x67640F3,
@@ -3658,7 +3661,7 @@ public:
     static inline auto CompareTwoDates(int32_t date0_0, int32_t date0_1, int32_t date1_0, int32_t date1_1) { return NativeInvoke::Invoke<301, std::to_underlying(NativeHashes::COMPARE_TWO_DATES), int32_t>(date0_0, date0_1, date1_0, date1_1); }
     static inline auto ConnectLods(Object obj0, Object obj1) { return NativeInvoke::Invoke<302, std::to_underlying(NativeHashes::CONNECT_LODS), void>(obj0, obj1); }
     static inline auto ControlCarDoor(Vehicle vehicle, uint32_t door, uint32_t unknown_maybe_open, float angle) { return NativeInvoke::Invoke<303, std::to_underlying(NativeHashes::CONTROL_CAR_DOOR), void>(vehicle, door, unknown_maybe_open, angle); }
-    static inline auto ConvertIntToPlayerindex(uint32_t playerId) { return NativeInvoke::Invoke<304, std::to_underlying(NativeHashes::CONVERT_INT_TO_PLAYERINDEX), Player>(playerId); }
+    static inline auto ConvertIntToPlayerIndex(uint32_t playerId) { return NativeInvoke::Invoke<304, std::to_underlying(NativeHashes::CONVERT_INT_TO_PLAYERINDEX), Player>(playerId); }
     static inline auto ConvertMetresToFeet(float metres) { return NativeInvoke::Invoke<305, std::to_underlying(NativeHashes::CONVERT_METRES_TO_FEET), float>(metres); }
     static inline auto ConvertMetresToFeetInt(int32_t metres) { return NativeInvoke::Invoke<306, std::to_underlying(NativeHashes::CONVERT_METRES_TO_FEET_INT), int32_t>(metres); }
     static inline auto ConvertThenAddStringToHtmlScriptObject(int32_t htmlobj, char* strgxtkey) { return NativeInvoke::Invoke<307, std::to_underlying(NativeHashes::CONVERT_THEN_ADD_STRING_TO_HTML_SCRIPT_OBJECT), void>(htmlobj, strgxtkey); }
@@ -3979,8 +3982,8 @@ public:
     static inline auto GetAmmoInClip(Ped ped, uint32_t weapon, uint32_t* pAmmo) { return NativeInvoke::Invoke<622, std::to_underlying(NativeHashes::GET_AMMO_IN_CLIP), bool>(ped, weapon, pAmmo); }
     static inline auto GetAngleBetween2dVectors(float x1, float y1, float x2, float y2, float* pResult) { return NativeInvoke::Invoke<623, std::to_underlying(NativeHashes::GET_ANGLE_BETWEEN_2D_VECTORS), void>(x1, y1, x2, y2, pResult); }
     static inline auto GetAnimGroupFromChar(Ped ped) { return NativeInvoke::Invoke<624, std::to_underlying(NativeHashes::GET_ANIM_GROUP_FROM_CHAR), char*>(ped); }
-    static inline auto GetAsciiJustPressed(int32_t key, int a2) { return NativeInvoke::Invoke<625, std::to_underlying(NativeHashes::GET_ASCII_JUST_PRESSED), int32_t>(key, a2); }
-    static inline auto GetAsciiPressed(int32_t key, int32_t* a2) { return NativeInvoke::Invoke<626, std::to_underlying(NativeHashes::GET_ASCII_PRESSED), bool>(key, a2); }
+    static inline auto GetAsciiJustPressed(int32_t key, int32_t* pressedKey) { return NativeInvoke::Invoke<625, std::to_underlying(NativeHashes::GET_ASCII_JUST_PRESSED), int32_t>(key, pressedKey); }
+    static inline auto GetAsciiPressed(int32_t key, int32_t* pressedKey) { return NativeInvoke::Invoke<626, std::to_underlying(NativeHashes::GET_ASCII_PRESSED), bool>(key, pressedKey); }
     static inline auto GetAspectRatio() { return NativeInvoke::Invoke<627, std::to_underlying(NativeHashes::GET_ASPECT_RATIO), float>(); }
     static inline auto GetAudibleMusicTrackTextId() { return NativeInvoke::Invoke<628, std::to_underlying(NativeHashes::GET_AUDIBLE_MUSIC_TRACK_TEXT_ID), int32_t>(); }
     static inline auto GetAudioRoomId() { return NativeInvoke::Invoke<629, std::to_underlying(NativeHashes::GET_AUDIO_ROOM_ID), int32_t>(); }
@@ -4247,7 +4250,7 @@ public:
     static inline auto GetNthClosestCarNodeFavourDirection(int a1, float x, float y, float z, int32_t n, float* pX, float* pY, float* pZ, float* direction) { return NativeInvoke::Invoke<890, std::to_underlying(NativeHashes::GET_NTH_CLOSEST_CAR_NODE_FAVOUR_DIRECTION), bool>(a1, x, y, z, n, pX, pY, pZ, direction); }
     static inline auto GetNthClosestCarNodeWithHeading(float x, float y, float z, uint32_t nodeNum, float* pResX, float* pResY, float* pResZ, float* pHeading) { return NativeInvoke::Invoke<891, std::to_underlying(NativeHashes::GET_NTH_CLOSEST_CAR_NODE_WITH_HEADING), bool>(x, y, z, nodeNum, pResX, pResY, pResZ, pHeading); }
     static inline auto GetNthClosestCarNodeWithHeadingOnIsland(float x, float y, float z, uint32_t nodeNum, uint32_t areaId, float* pResX, float* pResY, float* pResZ, float* pHeading, uint32_t* pUnknownMaybeAreaId) { return NativeInvoke::Invoke<892, std::to_underlying(NativeHashes::GET_NTH_CLOSEST_CAR_NODE_WITH_HEADING_ON_ISLAND), bool>(x, y, z, nodeNum, areaId, pResX, pResY, pResZ, pHeading, pUnknownMaybeAreaId); }
-    static inline auto GetNthClosestWaterNodeWithHeading(float x, float y, float z, bool flag0, bool flag1, Vector3* node, float* heading) { return NativeInvoke::Invoke<893, std::to_underlying(NativeHashes::GET_NTH_CLOSEST_WATER_NODE_WITH_HEADING), bool>(x, y, z, flag0, flag1, node, heading); }
+    static inline auto GetNthClosestWaterNodeWithHeading(float x, float y, float z, bool flag0, bool flag1, Vector4* node, float* heading) { return NativeInvoke::Invoke<893, std::to_underlying(NativeHashes::GET_NTH_CLOSEST_WATER_NODE_WITH_HEADING), bool>(x, y, z, flag0, flag1, node, heading); }
     static inline auto GetNthGroupMember(int32_t group, int32_t n, Ped* ped) { return NativeInvoke::Invoke<894, std::to_underlying(NativeHashes::GET_NTH_GROUP_MEMBER), void>(group, n, ped); }
     static inline auto GetNthIntegerInString(char* gxtName, uint32_t index) { return NativeInvoke::Invoke<895, std::to_underlying(NativeHashes::GET_NTH_INTEGER_IN_STRING), char*>(gxtName, index); }
     static inline auto GetNumCarColours(Vehicle vehicle, uint32_t* pNumColours) { return NativeInvoke::Invoke<896, std::to_underlying(NativeHashes::GET_NUM_CAR_COLOURS), void>(vehicle, pNumColours); }
@@ -4266,7 +4269,7 @@ public:
     static inline auto GetNumberOfFiresInRange(float x, float y, float z, float radius) { return NativeInvoke::Invoke<909, std::to_underlying(NativeHashes::GET_NUMBER_OF_FIRES_IN_RANGE), uint32_t>(x, y, z, radius); }
     static inline auto GetNumberOfFollowers(Ped ped, int32_t* followers) { return NativeInvoke::Invoke<910, std::to_underlying(NativeHashes::GET_NUMBER_OF_FOLLOWERS), void>(ped, followers); }
     static inline auto GetNumberOfInjuredPedsInRange(float x, float y, float z, float radius) { return NativeInvoke::Invoke<911, std::to_underlying(NativeHashes::GET_NUMBER_OF_INJURED_PEDS_IN_RANGE), int32_t>(x, y, z, radius); }
-    static inline auto GetNumberOfInstancesOfStreamedScript(char* scriptName) { return NativeInvoke::Invoke<912, std::to_underlying(NativeHashes::GET_NUMBER_OF_INSTANCES_OF_STREAMED_SCRIPT), uint32_t>(scriptName); }
+    static inline auto GetNumberOfInstancesOfStreamedScript(char* scriptName) { return NativeInvoke::Invoke<912, std::to_underlying(NativeHashes::GET_NUMBER_OF_INSTANCES_OF_STREAMED_SCRIPT), int32_t>(scriptName); }
     static inline auto GetNumberOfPassengers(Vehicle vehicle, uint32_t* pNumPassengers) { return NativeInvoke::Invoke<913, std::to_underlying(NativeHashes::GET_NUMBER_OF_PASSENGERS), void>(vehicle, pNumPassengers); }
     static inline auto GetNumberOfPlayers() { return NativeInvoke::Invoke<914, std::to_underlying(NativeHashes::GET_NUMBER_OF_PLAYERS), uint32_t>(); }
     static inline auto GetNumberOfStickyBombsStuckToObject(Object obj) { return NativeInvoke::Invoke<915, std::to_underlying(NativeHashes::GET_NUMBER_OF_STICKY_BOMBS_STUCK_TO_OBJECT), int32_t>(obj); }
@@ -4653,8 +4656,8 @@ public:
     static inline auto IsCharVisible(Ped ped) { return NativeInvoke::Invoke<1296, std::to_underlying(NativeHashes::IS_CHAR_VISIBLE), bool>(ped); }
     static inline auto IsCharWaitingForWorldCollision(Ped ped) { return NativeInvoke::Invoke<1297, std::to_underlying(NativeHashes::IS_CHAR_WAITING_FOR_WORLD_COLLISION), bool>(ped); }
     static inline auto IsClosestObjectOfTypeSmashedOrDamaged(float x, float y, float z, float radius, uint32_t type_or_model, bool flag0, bool flag1) { return NativeInvoke::Invoke<1298, std::to_underlying(NativeHashes::IS_CLOSEST_OBJECT_OF_TYPE_SMASHED_OR_DAMAGED), bool>(x, y, z, radius, type_or_model, flag0, flag1); }
-    static inline auto IsControlJustPressed(int a1, int32_t controlid) { return NativeInvoke::Invoke<1299, std::to_underlying(NativeHashes::IS_CONTROL_JUST_PRESSED), bool>(a1, controlid); }
-    static inline auto IsControlPressed(int a1, int32_t controlid) { return NativeInvoke::Invoke<1300, std::to_underlying(NativeHashes::IS_CONTROL_PRESSED), bool>(a1, controlid); }
+    static inline auto IsControlJustPressed(int padIndex, int32_t control) { return NativeInvoke::Invoke<1299, std::to_underlying(NativeHashes::IS_CONTROL_JUST_PRESSED), bool>(padIndex, control); }
+    static inline auto IsControlPressed(int padIndex, int32_t control) { return NativeInvoke::Invoke<1300, std::to_underlying(NativeHashes::IS_CONTROL_PRESSED), bool>(padIndex, control); }
     static inline auto IsCopPedInArea3dNoSave(float x0, float y0, float z0, float x1, float y1, float z1) { return NativeInvoke::Invoke<1301, std::to_underlying(NativeHashes::IS_COP_PED_IN_AREA_3D_NO_SAVE), bool>(x0, y0, z0, x1, y1, z1); }
     static inline auto IsCopVehicleInArea3dNoSave(float x0, float y0, float z0, float x1, float y1, float z1) { return NativeInvoke::Invoke<1302, std::to_underlying(NativeHashes::IS_COP_VEHICLE_IN_AREA_3D_NO_SAVE), bool>(x0, y0, z0, x1, y1, z1); }
     static inline auto IsDamageTrackerActiveOnNetworkId(Any a1) { return NativeInvoke::Invoke<1303, std::to_underlying(NativeHashes::IS_DAMAGE_TRACKER_ACTIVE_ON_NETWORK_ID), Any>(a1); }
@@ -5123,7 +5126,7 @@ public:
     static inline auto PreloadStreamWithStartOffset(char* StreamName, int32_t StartOffset) { return NativeInvoke::Invoke<1766, std::to_underlying(NativeHashes::PRELOAD_STREAM_WITH_START_OFFSET), bool>(StreamName, StartOffset); }
     static inline auto PreviewRingtone(int32_t RingtoneId) { return NativeInvoke::Invoke<1767, std::to_underlying(NativeHashes::PREVIEW_RINGTONE), void>(RingtoneId); }
     static inline auto Print(char* gxtName, uint32_t timeMS, bool enable) { return NativeInvoke::Invoke<1768, std::to_underlying(NativeHashes::PRINT), void>(gxtName, timeMS, enable); }
-    static inline auto PrintBig(char* gxtName, uint32_t timeMS, bool enable) { return NativeInvoke::Invoke<1769, std::to_underlying(NativeHashes::PRINT_BIG), void>(gxtName, timeMS, enable); }
+    static inline auto PrintBig(char* gxtName, uint32_t timeMS, uint8_t style) { return NativeInvoke::Invoke<1769, std::to_underlying(NativeHashes::PRINT_BIG), void>(gxtName, timeMS, style); }
     static inline auto PrintBigQ(char* gxtentry, int32_t time, int32_t flag) { return NativeInvoke::Invoke<1770, std::to_underlying(NativeHashes::PRINT_BIG_Q), void>(gxtentry, time, flag); }
     static inline auto PrintHelp(char* gxtName) { return NativeInvoke::Invoke<1771, std::to_underlying(NativeHashes::PRINT_HELP), void>(gxtName); }
     static inline auto PrintHelpForever(char* gxtName) { return NativeInvoke::Invoke<1772, std::to_underlying(NativeHashes::PRINT_HELP_FOREVER), void>(gxtName); }

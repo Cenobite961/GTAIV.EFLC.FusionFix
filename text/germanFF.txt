@@ -145,14 +145,20 @@ Zentrierte Zu-Fuß-Kamera
 [Camera Shake]
 Kamerawackeln
 
+[FE_STEAMPAD]
+Steam Controller
+
 [CutscAudioSync]
 Synchronen Ton in Zwischensequenzen erzwingen
 
 [CutscAudioSync0]
-Synchroner Zwischensequenzton deaktiviert
+Synchronen Ton in Zwischensequenzen erzwingen - Aus
 
 [CutscAudioSync1]
-Synchroner Zwischensequenzton aktiviert
+Synchronen Ton in Zwischensequenzen erzwingen - Alternativ
+
+[CutscAudioSync2]
+Synchronen Ton in Zwischensequenzen erzwingen - An
 
 [Turn Indicators]
 Blinker
@@ -187,6 +193,9 @@ GTA IV muss neu gestartet werden, um die Einstellungen anzuwenden.
 [Extended Sniper]
 Erweiterte Sniper-Steuerung
 
+[Ladders Climb]
+Automatisches Leiternklettern
+
 [Bullet Traces]
 Schussspuren immer sichtbar
 
@@ -204,6 +213,9 @@ Polizei-Buffalo
 
 [FF_WARN0]
 ~p~IMG-Dateien:
+
+[MO_ALT]
+Alternativ
 
 [FF_WARN1]
 ; ~r~ACHTUNG: Obergrenze von 255 IMG-Dateien überschritten, was zu Streaming-Problemen führt.

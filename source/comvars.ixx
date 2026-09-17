@@ -1999,13 +1999,6 @@ export namespace CMenu
     }
 }
 
-export namespace CCutscenes
-{
-    uint32_t* m_dwCutsceneState;
-
-    bool(*hasCutsceneFinished)();
-}
-
 export namespace CCamera
 {
     bool(*isWidescreenBordersActive)();
@@ -2013,20 +2006,23 @@ export namespace CCamera
 
 export namespace CTimer
 {
-    float* fTimeStep;
-    float* fCamTimeStep;
-    float* fTimeScale1;
-    float* fTimeScale2;
-    uint8_t* m_UserPause = nullptr;
-    uint8_t* m_CodePause = nullptr;
+    float* fTimeStep = nullptr;
+    float* fCamTimeStep = nullptr;
+    float* fTimeScale1 = nullptr;
+    float* fTimeScale2 = nullptr;
+    float* m_gameTime = nullptr;
+    float* m_systemTime = nullptr;
+    uint8_t* ms_bUserPause = nullptr;
+    uint8_t* ms_bScriptPause = nullptr;
     int32_t* m_snTimeInMilliseconds = nullptr;
     uint32_t* m_frameCount = nullptr;
 }
 
-export namespace CTimeCycle
+export namespace TimeCycle
 {
-    void(__cdecl* Initialise)() = nullptr;
-    void(__cdecl* InitialiseModifiers)() = nullptr;
+    void (__cdecl* Initialise)() = nullptr;
+    void (__cdecl* InitialiseModifiers)() = nullptr;
+    float* m_InteriorBlendStrength = nullptr;
 }
 
 export namespace CWeather
@@ -2168,14 +2164,6 @@ public:
         static FusionFix::Event<> BuildRenderListEvent;
         return BuildRenderListEvent;
     }
-    //static FusionFix::Event<>& onBeforePostFX() {
-    //    static FusionFix::Event<> BeforePostFX;
-    //    return BeforePostFX;
-    //}
-    //static FusionFix::Event<>& onAfterPostFX() {
-    //    static FusionFix::Event<> AfterPostFX;
-    //    return AfterPostFX;
-    //}
 
     static inline SafetyHookInline shBuildRenderList{};
     static void __fastcall BuildRenderList(CBaseDC* _this, void* edx)
@@ -2215,8 +2203,9 @@ export HWND gWnd;
 export RECT gRect;
 export bool bDynamicShadowsForTrees = true;
 export bool bLoadingShown = false;
-export int bMenuNeedsUpdate = 0;
-export int bMenuNeedsUpdate2 = 0;
+export int nTimecycleUnpauseTimer = 0;
+export int nCameraUnpauseTimer1 = 0;
+export int nCameraUnpauseTimer2 = 0;
 export bool bExtraNightShadows = false;
 export bool bHeadlightShadows = false;
 export bool bVehicleNightShadows = true;
@@ -2567,6 +2556,53 @@ export namespace CCamera
     bool (__cdecl* isScreenFadedOut)() = nullptr;
 }
 
+export namespace CTreeImposters
+{
+    float* ms_windAng = nullptr;
+}
+
+export namespace CPhoneMgr
+{
+    bool* bDisplayMobile = nullptr;
+}
+
+export namespace CGameLogic
+{
+    int32_t* GameState = nullptr;
+}
+
+export namespace CRandom
+{
+    int (__cdecl* GetRandomNumberInRange)(int a1, int a2) = nullptr;
+}
+
+export namespace CTaskSimpleMovePlayer
+{
+    bool* ms_bDefaultNoSprintingInInteriors = nullptr;
+}
+
+export namespace CRenderPhase
+{
+    int32_t* sm_pCurrent = nullptr;
+}
+
+export namespace audCutsceneAudioEntity
+{
+    int (__thiscall* GetPlayTimeMs)(uint8_t*) = nullptr;
+}
+
+export namespace CCutsceneManager
+{
+    uint32_t* ms_State = nullptr;
+
+    bool IsRunning()
+    {
+        return ms_State != 0;
+    }
+
+    float* ms_fTimePassedSinceLastAudioStart = nullptr;
+}
+
 export enum eControllerButtons
 {
     BUTTON_BUMPER_LEFT = 4,
@@ -2625,9 +2661,18 @@ public:
 
         _dwCurrentEpisode = *find_pattern("83 3D ? ? ? ? ? 75 0F 6A 02", "89 35 ? ? ? ? 89 35 ? ? ? ? 6A 00 6A 01").get_first<int32_t*>(2);
 
-        pattern = find_pattern("0A 05 ? ? ? ? 0A 05 ? ? ? ? 75 38", "0A 05 ? ? ? ? 0A 05");
-        CTimer::m_UserPause = *pattern.get_first<uint8_t*>(2);
-        CTimer::m_CodePause = *pattern.get_first<uint8_t*>(8);
+        pattern = hook::pattern("0F B6 0D ? ? ? ? 0F B6 C0 0B C1");
+        if (!pattern.empty())
+        {
+            CTimer::ms_bUserPause = *pattern.get_first<uint8_t*>(3);
+            CTimer::ms_bScriptPause = *pattern.get_first<uint8_t*>(15);
+        }
+        else
+        {
+            pattern = hook::pattern("0F B6 0D ? ? ? ? 0F B6 15 ? ? ? ? 33 C0 0B C1");
+            CTimer::ms_bUserPause = *pattern.get_first<uint8_t*>(3);
+            CTimer::ms_bScriptPause = *pattern.get_first<uint8_t*>(10);
+        }
 
         pattern = find_pattern("A1 ? ? ? ? A3 ? ? ? ? EB 3A", "A1 ? ? ? ? 39 05 ? ? ? ? 76 1F");
         CTimer::m_snTimeInMilliseconds = *pattern.get_first<int32_t*>(1);
@@ -2682,9 +2727,6 @@ public:
         pattern = find_pattern("BE ? ? ? ? 8D 44 24 0C 50 8D 46 10 50", "BE ? ? ? ? 8D 44 24 0C 50 8D 4E 10 51");
         CGameConfigReader::ms_imgFiles = *pattern.get_first<decltype(CGameConfigReader::ms_imgFiles)>(1);
 
-        pattern = hook::pattern("A1 ? ? ? ? 83 F8 08 74 05");
-        CCutscenes::m_dwCutsceneState = *pattern.get_first<uint32_t*>(1);
-
         pattern = find_pattern("89 3D ? ? ? ? A3 ? ? ? ? C7 05", "89 1D ? ? ? ? A3 ? ? ? ? 89 35");
         rage::grcWindow::ms_nActiveWidth = *pattern.get_first<int32_t*>(2);
         rage::grcWindow::ms_nActiveHeight = *pattern.get_first<int32_t*>(7);
@@ -2717,10 +2759,13 @@ public:
         CViewport3DScene::pStencilRT = *pattern.get_first<rage::grcRenderTargetPC**>(1);
 
         pattern = find_pattern("55 8B EC 83 E4 F0 81 EC ? ? ? ? 8B 0D ? ? ? ? 53 0F B7 41 04", "55 8B EC 83 E4 F0 81 EC ? ? ? ? A1 ? ? ? ? 33 C4 89 84 24 ? ? ? ? 8B 0D ? ? ? ? 0F B7 41 04");
-        CTimeCycle::Initialise = pattern.get_first<void(__cdecl)()>(0);
+        TimeCycle::Initialise = pattern.get_first<void(__cdecl)()>(0);
 
         pattern = find_pattern("68 ? ? ? ? E8 ? ? ? ? 68 ? ? ? ? C7 05 ? ? ? ? ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 68");
-        CTimeCycle::InitialiseModifiers = pattern.get_first<void(__cdecl)()>(0);
+        TimeCycle::InitialiseModifiers = pattern.get_first<void(__cdecl)()>(0);
+
+        pattern = find_pattern("F3 0F 11 05 ? ? ? ? F3 0F 10 4F", "F3 0F 11 05 ? ? ? ? D9 05 ? ? ? ? F3 0F 10 43");
+        TimeCycle::m_InteriorBlendStrength = *pattern.get_first<float*>(4);
 
         pattern = find_pattern("56 57 6A 00 FF 74 24 10 8B F9 E8 ? ? ? ? 0F B7 77 0C", "8B 44 24 04 56 57 6A 00 50 8B F9");
         rage::grmShaderInfo::getParamIndex = (decltype(rage::grmShaderInfo::getParamIndex))pattern.get_first(0);
@@ -2738,8 +2783,14 @@ public:
             injector::MakeCALL(pattern.get_first(6), rage::grmShaderInfo::setShaderParamOriginal, true);
         }
 
+        pattern = find_pattern("89 0D ? ? ? ? 8B 01 FF 50 ? C7 05", "89 0D ? ? ? ? 8B 01 8B 50");
+        CRenderPhase::sm_pCurrent = *pattern.get_first<int32_t*>(2);
+
         pattern = find_pattern("55 8B EC 83 E4 F0 81 EC ? ? ? ? 53 8B D9 56 F7 83", "55 8B EC 83 E4 F0 81 EC ? ? ? ? 53 56 57 8B F9 33 DB");
         CRenderPhaseDeferredLighting_LightsToScreen::shBuildRenderList = safetyhook::create_inline(pattern.get_first(), CRenderPhaseDeferredLighting_LightsToScreen::BuildRenderList);
+
+        pattern = hook::pattern("51 56 8B F1 83 BE ? ? ? ? ? 0F 84 ? ? ? ? 68");
+        CRenderPhaseDeferredLighting_SceneToGBuffer::shBuildRenderList = safetyhook::create_inline(pattern.get_first(0), CRenderPhaseDeferredLighting_SceneToGBuffer::BuildRenderList);
 
         pattern = find_pattern("E8 ? ? ? ? F3 0F 10 44 24 ? 51 F3 0F 11 04 24 56 E8 ? ? ? ? 83 C4 08 FF 05", "E8 ? ? ? ? D9 44 24 0C 51 D9 1C 24 56 E8 ? ? ? ? 83 C4 08");
         CRenderPhaseDeferredLighting_LightsToScreen::shCopyLight = safetyhook::create_inline(injector::GetBranchDestination(pattern.get_first()).get<void*>(), CRenderPhaseDeferredLighting_LightsToScreen::CopyLight);
@@ -2785,8 +2836,6 @@ public:
         pattern = find_pattern("A1 ? ? ? ? 83 F8 08 74 17", "A1 ? ? ? ? 83 F8 08 74 0C");
         pMenuTab = *pattern.get_first<int32_t*>(1);
 
-        pattern = find_pattern("E8 ? ? ? ? 84 C0 75 89", "E8 ? ? ? ? 84 C0 75 15 38 05");
-        CCutscenes::hasCutsceneFinished = (bool(*)())injector::GetBranchDestination(pattern.get_first(0)).get();
         pattern = find_pattern("E8 ? ? ? ? 84 C0 75 44 38 05 ? ? ? ? 74 26", "E8 ? ? ? ? 84 C0 75 42 38 05");
         CCamera::isWidescreenBordersActive = (bool(*)())injector::GetBranchDestination(pattern.get_first(0)).get();
 
@@ -2804,9 +2853,6 @@ public:
             CClock::ms_nGameClockMinutes = *pattern.get_first<uint8_t*>(23);
             CClock::ms_nGameClockSeconds = *pattern.get_first<uint16_t*>(28);
         }
-
-        pattern = hook::pattern("51 56 8B F1 83 BE ? ? ? ? ? 0F 84 ? ? ? ? 68");
-        CRenderPhaseDeferredLighting_SceneToGBuffer::shBuildRenderList = safetyhook::create_inline(pattern.get_first(0), CRenderPhaseDeferredLighting_SceneToGBuffer::BuildRenderList);
 
         pattern = find_pattern("83 3D ? ? ? ? ? 8D 81 ? ? ? ? 75 ? 8D 81 ? ? ? ? 50", "83 3D ? ? ? ? ? 74 ? 8D 8B");
         dwSniperInverted = *pattern.get_first<int*>(2);
@@ -2935,6 +2981,20 @@ public:
         pattern = find_pattern("E8 ? ? ? ? 84 C0 74 ? F3 0F 10 86 ? ? ? ? F3 0F 58 05", "E8 ? ? ? ? 50 56 E8 ? ? ? ? 83 C4 ? E8");
         CCamera::isScreenFadedOut = (decltype(CCamera::isScreenFadedOut))injector::GetBranchDestination(pattern.get_first()).as_int();
 
+        pattern = hook::pattern("C7 05 ? ? ? ? ? ? ? ? 0F 85 ? ? ? ? 6A ? 6A");
+        if (!pattern.empty())
+        {
+            CTreeImposters::ms_windAng = *pattern.get_first<float*>(2);
+        }
+        else
+        {
+            pattern = hook::pattern("F3 0F 11 05 ? ? ? ? 0F 85");
+            CTreeImposters::ms_windAng = *pattern.get_first<float*>(4);
+        }
+
+        pattern = find_pattern("C6 05 ? ? ? ? ? C6 05 ? ? ? ? ? C7 05 ? ? ? ? ? ? ? ? 8B 01", "88 1D ? ? ? ? 88 1D ? ? ? ? 89 1D ? ? ? ? 8B 11");
+        CPhoneMgr::bDisplayMobile = *pattern.get_first<bool*>(2);
+
         pattern = hook::pattern("E8 ? ? ? ? 8B 48 ? 69 C9");
         game_rand = *pattern.get_first<int(__cdecl)()>(0);
 
@@ -2957,5 +3017,29 @@ public:
             pattern = hook::pattern("8B 0D ? ? ? ? DB 05 ? ? ? ? 85 C9 7D ? D8 05 ? ? ? ? D8 0D");
             CReplayMgr::dword_11F704C = *pattern.get_first<uint32_t*>(2);
         }
+
+        pattern = hook::pattern("83 3D ? ? ? ? ? 53 56 57 75 ? E8 ? ? ? ? 84 C0");
+        CGameLogic::GameState = *pattern.get_first<int32_t*>(2);
+
+        pattern = find_pattern("E8 ? ? ? ? 25 ? ? ? ? 66 0F 6E C8 8B 44 24", "E8 ? ? ? ? 8B 4C 24 ? 25 ? ? ? ? F3 0F 2A C0");
+        CRandom::GetRandomNumberInRange = pattern.get_first<int(__cdecl)(int, int)>(0);
+
+        pattern = find_pattern("80 3D ? ? ? ? ? 74 ? 8B 8F ? ? ? ? 85 C9", "80 3D ? ? ? ? ? 74 ? 83 BE ? ? ? ? ? 74");
+        CTaskSimpleMovePlayer::ms_bDefaultNoSprintingInInteriors = *pattern.get_first<bool*>(2);
+      
+        pattern = hook::pattern("83 3D ? ? ? ? ? 75 ? 83 F8 ? 75 ? F3 0F 10 05 ? ? ? ? EB");
+        CCutsceneManager::ms_State = *pattern.get_first<uint32_t*>(2);
+
+        pattern = find_pattern("0F B6 81 ? ? ? ? 40", "0F B6 91 ? ? ? ? 83 C2");
+        audCutsceneAudioEntity::GetPlayTimeMs = (decltype(audCutsceneAudioEntity::GetPlayTimeMs))pattern.get_first(0);
+
+        pattern = find_pattern("F3 0F 5C 05 ? ? ? ? 0F 2F D0 76 ? 5F", "F3 0F 5C 05 ? ? ? ? 0F 2F E8 76 ? F3 0F 11 2F");
+        CCutsceneManager::ms_fTimePassedSinceLastAudioStart = *pattern.get_first<float*>(4);
+
+        pattern = find_pattern("F3 0F 10 05 ? ? ? ? F3 0F 59 05 ? ? ? ? F3 0F 58 44 24 ? 5F", "F3 0F 10 05 ? ? ? ? F3 0F 59 05 ? ? ? ? F3 0F 58 44 24 ? F3 0F 11 07");
+        CTimer::m_gameTime = *pattern.get_first<float*>(4);
+
+        pattern = find_pattern("F3 0F 10 05 ? ? ? ? EB ? 66 0F 6E C0", "F3 0F 10 05 ? ? ? ? EB ? F3 0F 2A C0");
+        CTimer::m_systemTime = *pattern.get_first<float*>(4);
     }
 } Common;

@@ -145,14 +145,20 @@ FPSリミッター
 [Camera Shake]
 カメラの振動
 
+[FE_STEAMPAD]
+Steam Controller
+
 [CutscAudioSync]
 カットシーンの音声同期
 
 [CutscAudioSync0]
-カットシーンの音声同期が無効化されました
+カットシーンの音声同期 - オフ
 
 [CutscAudioSync1]
-カットシーンの音声同期が有効化されました
+カットシーンの音声同期 - 代替案
+
+[CutscAudioSync2]
+カットシーンの音声同期 - オン
 
 [Turn Indicators]
 ウィンカー
@@ -187,6 +193,9 @@ FPSリミッター
 [Extended Sniper]
 スナイパーライフルの追加操作
 
+[Ladders Climb]
+自動はしご登り
+
 [Bullet Traces]
 常に弾道を表示する
 
@@ -201,6 +210,9 @@ FPSリミッター
 
 [FF_WARN0]
 ~p~IMGファイル:
+
+[MO_ALT]
+代替案
 
 [FF_WARN1]
 ; ~r~警告: IMGファイルの個数が制限の255個を超過しています。ストリーミング関連の不具合が発生する可能性があります。

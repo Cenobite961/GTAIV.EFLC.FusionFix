@@ -2,7 +2,6 @@ module;
 
 #include <common.hxx>
 #include <shlobj.h>
-#include <filesystem>
 #include <d3dx9.h>
 
 export module settings;
@@ -10,10 +9,9 @@ export module settings;
 import common;
 import comvars;
 import d3dx9_43;
-import fusiondxhook;
 import gxtloader;
-import timecycext;
 import natives;
+import timecycext;
 
 namespace CText
 {
@@ -73,13 +71,52 @@ namespace CText
 
         pattern = find_pattern("E8 ? ? ? ? 50 68 ? ? ? ? 8D 84 24 ? ? ? ? 68 ? ? ? ? 50 E8 ? ? ? ? 83 C4 18", "E8 ? ? ? ? 50 8D 84 24 ? ? ? ? 68 ? ? ? ? 50 BA ? ? ? ? E8 ? ? ? ? 83 C4 14");
         Get = (const wchar_t* (__fastcall*)(void*, void*, const char*))injector::GetBranchDestination(pattern.get_first(0)).as_int();
-        //shGetText = safetyhook::create_inline(injector::GetBranchDestination(pattern.get_first()).as_int(), getText);
 
         pattern = find_pattern("E8 ? ? ? ? 50 8D 86 ? ? ? ? 50 E8 ? ? ? ? 83 C4 0C EB 27", "E8 ? ? ? ? 50 8D 8F ? ? ? ? 51");
         shGetTextByKey = safetyhook::create_inline(injector::GetBranchDestination(pattern.get_first()).as_int(), getTextByKey);
 
         pattern = find_pattern("51 8B 44 24 08 53 8B D9 C6 44 24", "51 8B 44 24 08 85 C0 53 8B D9");
         shDoesTextLabelExist = safetyhook::create_inline(pattern.get_first(), doesTextLabelExist);
+    }
+}
+
+namespace CTimer
+{
+    char IsUserPaused()
+    {
+        if (nCameraUnpauseTimer1 > 0)
+        {
+            nCameraUnpauseTimer1--;
+
+            return 0;
+        }
+
+        return *CTimer::ms_bUserPause;
+    }
+
+    injector::hook_back<int(*)()> hbIsGamePaused;
+    int IsGamePaused_1()
+    {
+        if (nCameraUnpauseTimer2 > 0)
+        {
+            nCameraUnpauseTimer2--;
+
+            return 0;
+        }
+
+        return hbIsGamePaused.fun();
+    }
+
+    int IsGamePaused_2()
+    {
+        if (nTimecycleUnpauseTimer > 0)
+        {
+            nTimecycleUnpauseTimer--;
+
+            return 0;
+        }
+
+        return hbIsGamePaused.fun();
     }
 }
 
@@ -289,7 +326,7 @@ public:
             { 0, "PREF_BORDERLESS",             "MAIN",       "BorderlessWindowed",                 "",                           1, nullptr, 0, 1 },
             { 0, "PREF_FPS_LIMIT_PRESET",       "FRAMELIMIT", "FpsLimitPreset",                     "MENU_DISPLAY_FRAMELIMIT",    0, nullptr, (int32_t)FpsCaps.eOFF, std::distance(std::begin(FpsCaps.data), std::end(FpsCaps.data)) - 1 },
             { 0, "PREF_BLOOM",                  "MAIN",       "Bloom",                              "",                           1, nullptr, 0, 1 },
-            { 0, "PREF_CONSOLE_GAMMA",          "MISC",       "ConsoleGamma",                       "",                           1, nullptr, 0, 1 },
+            { 0, "PREF_CONSOLE_GAMMA",          "MISC",       "ConsoleGamma",                       "",                           1, nullptr, 0, 2 }, // MENU_DISPLAY_NETSTATS_GAMEMODE
             { 0, "PREF_TIMECYC",                "MISC",       "ScreenFilter",                       "MENU_DISPLAY_TIMECYC",       5, nullptr, (int32_t)TimecycText.eMO_DEF, std::distance(std::begin(TimecycText.data), std::end(TimecycText.data)) - 1 },
             { 0, "PREF_WINDOWED",               "MAIN",       "Windowed",                           "",                           0, nullptr, 0, 1 },
             { 0, "PREF_DEFINITION",             "MAIN",       "Definition",                         "",                           1, nullptr, 0, 1 },
@@ -325,7 +362,7 @@ public:
             { 0, "PREF_CENTEREDCAMERA",         "MISC",       "CenteredVehCam",                     "",                           0, nullptr, 0, 1 },
             { 0, "PREF_CENTEREDCAMERAFOOT",     "MISC",       "CenteredFootCam",                    "",                           0, nullptr, 0, 1 },
             { 0, "PREF_CAMERASHAKE",            "MAIN",       "CameraShake",                        "",                           1, nullptr, 0, 1 },
-            { 0, "PREF_CUTSCENEAUDIOSYNC",      "MAIN",       "CutsceneAudioSync",                  "",                           0, nullptr, 0, 1 },
+            { 0, "PREF_CUTSCENEAUDIOSYNC",      "MAIN",       "CutsceneAudioSync",                  "",                           0, nullptr, 0, 2 }, // MENU_DISPLAY_NETSTATS_GAMETYPE
             { 0, "PREF_TURNINDICATORS",         "MISC",       "TurnIndicators",                     "",                           0, nullptr, 0, 1 },
             { 0, "PREF_EXTRANIGHTSHADOWS",      "SHADOWS",    "ExtraNightShadows",                  "",                           0, nullptr, 0, 3 }, //MENU_DISPLAY_NETSTATS_SCORES
             { 0, "PREF_GRAPHICSAPI",            "MAIN",       "GraphicsAPI",                        "",                           0, nullptr, 0, 1 }, //MENU_DISPLAY_NETSTATS_COMP_TEAM
@@ -341,6 +378,7 @@ public:
             { 0, "PREF_NOWARDROBEFADING",       "MISC",       "DisableWardrobeTransition",          "",                           0, nullptr, 0, 1 },
             { 0, "PREF_STOPTAXI",               "MISC",       "InstantStopTaxi",                    "",                           0, nullptr, 0, 1 },
             { 0, "PREF_SAO",                    "MISC",       "AmbientOcclusion",                   "",                           0, nullptr, 0, 1 },
+            { 0, "PREF_AUTOCLIMBLADDERS",       "MISC",       "AutoClimbLadders",                   "",                           0, nullptr, 0, 1 },
             // Enums are at capacity, to use more enums, replace multiplayer ones. On/Off toggles should still be possible to add.
         };
 
@@ -651,6 +689,28 @@ class Settings
 public:
     Settings()
     {
+        FusionFix::onInitEventAsync() += []()
+        {
+            auto stationslimit = GetModulePath(GetModuleHandleW(NULL)).parent_path() / "pc" / "audio" / "Config" / "stationslimit.txt";
+
+            std::ifstream is(stationslimit, std::ios::in);
+            if (is)
+            {
+                int limit = -1;
+                is >> limit;
+
+                if (limit >= 0 && limit <= 23)
+                {
+                    auto pattern = hook::pattern("0F B6 35 ? ? ? ? 85 F6");
+                    if (!pattern.empty())
+                    {
+                        static int stationsLimit = limit;
+                        injector::WriteMemory(pattern.get_first(3), &stationsLimit, true);
+                    }
+                }
+            }
+        };
+
         FusionFix::onInitEventAsync() += []()
         {
             // runtime settings
@@ -1260,8 +1320,8 @@ public:
                     auto curState = IsKeyboardKeyPressed(VK_F3);
                     if (!oldState && curState)
                     {
-                        CTimeCycle::Initialise();
-                        CTimeCycle::InitialiseModifiers();
+                        TimeCycle::Initialise();
+                        TimeCycle::InitialiseModifiers();
                     }
                     oldState = curState;
                 };
@@ -1272,28 +1332,6 @@ public:
                 if (pFPSFont)
                     pFPSFont->Release();
                 pFPSFont = nullptr;
-            };
-
-            FusionFix::onInitEventAsync() += []()
-            {
-                auto stationslimit = GetModulePath(GetModuleHandleW(NULL)).parent_path() / "pc" / "audio" / "Config" / "stationslimit.txt";
-
-                std::ifstream is(stationslimit, std::ios::in);
-                if (is)
-                {
-                    int limit = -1;
-                    is >> limit;
-
-                    if (limit >= 0 && limit <= 23)
-                    {
-                        auto pattern = hook::pattern("0F B6 35 ? ? ? ? 85 F6");
-                        if (!pattern.empty())
-                        {
-                            static int stationsLimit = limit;
-                            injector::WriteMemory(pattern.get_first(3), &stationsLimit, true);
-                        }
-                    }
-                }
             };
 
             FusionFix::onMenuDrawingEvent() += []()
@@ -1362,6 +1400,81 @@ public:
                     }
                 }
             });
+
+            // Make camera changes visible in menus
+            {
+                pattern = find_pattern("E8 ? ? ? ? 84 C0 74 12 80 3D ? ? ? ? ? 0F B6 DB", "E8 ? ? ? ? 84 C0 74 0A 38 1D");
+                injector::MakeCALL(pattern.get_first(0), CTimer::IsUserPaused);
+
+                pattern = hook::pattern("0A 05 ? ? ? ? 0A 05 ? ? ? ? 74 12");
+                if (!pattern.empty())
+                {
+                    injector::MakeNOP(pattern.get_first(0), 6, true);
+                    static auto CCam__BaseProcess_Hook = safetyhook::create_mid(pattern.get_first(0), [](SafetyHookContext& regs)
+                    {
+                        *(uint8_t*)&regs.eax |= *CTimer::ms_bUserPause;
+
+                        if (nCameraUnpauseTimer2 > 0)
+                        {
+                            *(uint8_t*)&regs.eax = 0;
+
+                            nCameraUnpauseTimer2--;
+                        }
+                    });
+                }
+                else
+                {
+                    pattern = hook::pattern("E8 ? ? ? ? 84 C0 74 ? 80 3D ? ? ? ? ? 75 ? 80 3D ? ? ? ? ? 74 ? 84 DB");
+                    CTimer::hbIsGamePaused.fun = injector::MakeCALL(pattern.get_first(0), CTimer::IsGamePaused_1).get();
+                }
+            }
+
+            // Make timecycle changes visible in menus
+            {
+                pattern = hook::pattern("0A 05 ? ? ? ? 0A 05 ? ? ? ? 0F 85 ? ? ? ? E8 ? ? ? ? 84 C0 0F 85 ? ? ? ? F3 0F 10 05 ? ? ? ? F3 0F 11 04 24");
+                if (!pattern.empty())
+                {
+                    injector::MakeNOP(pattern.get_first(0), 6, true);
+                    static auto CVisualEffects__Update_Hook = safetyhook::create_mid(pattern.get_first(0), [](SafetyHookContext& regs)
+                    {
+                        *(uint8_t*)&regs.eax |= *CTimer::ms_bUserPause;
+
+                        if (nTimecycleUnpauseTimer > 0)
+                        {
+                            *(uint8_t*)&regs.eax = 0;
+
+                            nTimecycleUnpauseTimer--;
+                        }
+                    });
+                }
+                else
+                {
+                    pattern = hook::pattern("E8 ? ? ? ? 84 C0 5F 0F 85");
+                    CTimer::hbIsGamePaused.fun = injector::MakeCALL(pattern.get_first(0), CTimer::IsGamePaused_2).get();
+                }
+
+                pattern = hook::pattern("0A 05 ? ? ? ? 0A 05 ? ? ? ? 74 ? 8B 0D");
+                if (!pattern.empty())
+                {
+                    injector::MakeNOP(pattern.get_first(0), 6, true);
+                    static auto TimeCycle__UpdateFinalize_Hook = safetyhook::create_mid(pattern.get_first(0), [](SafetyHookContext& regs)
+                    {
+                        *(uint8_t*)&regs.eax |= *CTimer::ms_bUserPause;
+
+                        if (nTimecycleUnpauseTimer > 0)
+                        {
+                            *(uint8_t*)&regs.eax = 0;
+
+                            nTimecycleUnpauseTimer--;
+                        }
+                    });
+                }
+                else
+                {
+                    pattern = hook::pattern("E8 ? ? ? ? 84 C0 74 ? A1 ? ? ? ? 69 C0");
+                    CTimer::hbIsGamePaused.fun = injector::MakeCALL(pattern.get_first(0), CTimer::IsGamePaused_2).get();
+                }
+            }
 
             hbGET_NUMBER_OF_INSTANCES_OF_STREAMED_SCRIPT.fun = NativeOverride::Register(Natives::NativeHashes::GET_NUMBER_OF_INSTANCES_OF_STREAMED_SCRIPT, NATIVE_GET_NUMBER_OF_INSTANCES_OF_STREAMED_SCRIPT, "E8", 30);
         }

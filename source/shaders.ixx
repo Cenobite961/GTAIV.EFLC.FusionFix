@@ -7,12 +7,12 @@ export module shaders;
 
 import common;
 import comvars;
-import settings;
+import d3dx9_43;
 import natives;
+import seasonal;
+import settings;
 import shadows;
 import timecycext;
-import seasonal;
-import d3dx9_43;
 
 template<typename T, typename ... U>
 concept IsAnyOf = (std::same_as<T, U> || ...);
@@ -129,10 +129,6 @@ class Shaders
         }
     }
 
-    //static void OnBeforeGBuffer()
-    //{
-    //
-    //}
 public:
     Shaders()
     {
@@ -297,13 +293,21 @@ public:
                 injector::WriteMemory(pattern.get_first(4), &dwMirrorOffset, true);
             }
 
-            // Contrast slider value is actually one tick lower internally on the Xbox 360 version (n ticks visually, actually n-1 in game code). Implement this behavior to get proper console gamma w/ FusionShaders
+            // Contrast slider ticks 0 and 1 are the same visually on the Xbox 360 version. This is not proper behavior, so it's a bug, but it was never fixed for that version,
+            // so we need to enforce this behavior to have faithful Xbox 360 gamma. On PC and PS3, all ticks on the slider correctly change the contrast/gamma.
             {
                 auto pattern = find_pattern("F3 0F 10 05 ? ? ? ? F3 0F 59 C6 F3 0F 11 4C 24", "F3 0F 10 05 ? ? ? ? F3 0F 59 C6 F3 0F 11 44 24 ? F3 0F 10 05");
-                static auto PostFXContrastHook = safetyhook::create_mid(pattern.get_first(8), [](SafetyHookContext& regs)
+                static auto rage__CPostFX__sm_contrastFrontEnd = *pattern.get_first<float*>(4);
+                injector::MakeNOP(pattern.get_first(0), 12, true);
+                static auto rage__CPostFX__ProcessPostProcess_Hook = safetyhook::create_mid(pattern.get_first(0), [](SafetyHookContext& regs)
                 {
-                    static auto consolegamma = FusionFixSettings.GetRef("PREF_CONSOLE_GAMMA");
-                    regs.xmm0.f32[0] += regs.xmm0.f32[0] >= 1.3f ? 0.0f : (consolegamma->get() ? 0.06f : 0.0f);
+                    regs.xmm0.f32[0] = *rage__CPostFX__sm_contrastFrontEnd;
+
+                    static auto ConsoleGamma = FusionFixSettings.GetRef("PREF_CONSOLE_GAMMA");
+                    if (ConsoleGamma->get() == 1 && regs.xmm0.f32[0] < 1.3f)
+                        regs.xmm0.f32[0] += 0.06f;
+
+                    regs.xmm0.f32[0] *= regs.xmm6.f32[0];
                 });
             }
 
@@ -365,43 +369,26 @@ public:
 
         FusionFix::onGameInitEvent() += []()
         {
-            auto pattern = hook::pattern("80 7C 24 ? ? 74 3F 80 BE ? ? ? ? ? 74 36");
-            static auto BeginSceneHook = safetyhook::create_mid(pattern.get_first(), [](SafetyHookContext& regs)
+            auto pattern = find_pattern("80 7C 24 ? ? 74 ? 80 BE ? ? ? ? ? 74 ? 8B 0D", "80 7C 24 ? ? 74 ? 80 BE ? ? ? ? ? 74 ? A1");
+            static auto grcSetup_BeginDraw_Hook = safetyhook::create_mid(pattern.get_first(0), [](SafetyHookContext& regs)
             {
                 auto pDevice = rage::grcDevice::GetD3DDevice();
 
                 // Setup variables for shaders
-                static auto dw11A2948 = *find_pattern("C7 05 ? ? ? ? ? ? ? ? 0F 85 ? ? ? ? 6A 00", "D8 05 ? ? ? ? D9 1D ? ? ? ? 83 05").get_first<float*>(2);
                 static auto dw103E49C = *find_pattern("8B 0D ? ? ? ? 8B 01 FF 50 ? B9 ? ? ? ? E9", "8B 0D ? ? ? ? 8B 11 8B 42 ? FF D0 B9").get_first<void**>(2);
                 auto bLoadscreenActive = (CMenuManager::bLoadscreenShown && *CMenuManager::bLoadscreenShown) || bLoadingShown;
 
                 if (*dw103E49C && !bLoadscreenActive)
                 {
-                    //static Cam cam = 0;
-                    //Natives::GetRootCam(&cam);
-                    //if (cam)
-                    //{
-                    //    static float farclip;
-                    //    static float nearclip;
-                    //
-                    //    Natives::GetCamFarClip(cam, &farclip);
-                    //    Natives::GetCamNearClip(cam, &nearclip);
-                    //
-                    //    static float arr[4];
-                    //    arr[0] = nearclip;
-                    //    arr[1] = farclip;
-                    //    arr[2] = 0.0f;
-                    //    arr[3] = 0.0f;
-                    //    pDevice->SetVertexShaderConstantF(227, &arr[0], 1);
-                    //}
-
-                    // DynamicShadowForTrees Wind Sway
+                    // DynamicShadowsForTrees wind sway
                     {
                         static float arr2[4];
-                        arr2[0] = (Natives::IsInteriorScene() || bNoWindSway) ? 0.0f : *dw11A2948;
+
+                        arr2[0] = (Natives::IsInteriorScene() || bNoWindSway) ? 0.0f : *CTreeImposters::ms_windAng;
                         arr2[1] = SeasonalManager::GetCurrent() == SeasonalType::Snow ? 0.005f : std::clamp(*CTimer::fTimeScale2 * 0.015f, 0.0015f, 0.015f);
                         arr2[2] = 0.0f;
                         arr2[3] = 0.0f;
+
                         pDevice->SetVertexShaderConstantF(233, &arr2[0], 1);
                     }
 
@@ -674,13 +661,6 @@ public:
                     if (mBeforeLightingCB)
                         mBeforeLightingCB->Append();
                 };
-
-                //CRenderPhaseDeferredLighting_SceneToGBuffer::OnBuildRenderList() += []()
-                //{
-                //    auto mBeforeGBuffer = new T_CB_Generic_NoArgs(OnBeforeGBuffer);
-                //    if (mBeforeGBuffer)
-                //        mBeforeGBuffer->Append();
-                //};
             }
         };
     };

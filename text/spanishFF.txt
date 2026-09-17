@@ -145,14 +145,20 @@ Centrar la cámara del personaje
 [Camera Shake]
 Sacudida de la cámara
 
+[FE_STEAMPAD]
+Steam Controller
+
 [CutscAudioSync]
 Sincronizar audio durante las escenas cinemáticas
 
 [CutscAudioSync0]
-Sincronizar audio durante las escenas cinemáticas: Desactivada
+Sincronizar audio durante las escenas cinemáticas - No
 
 [CutscAudioSync1]
-Sincronizar audio durante las escenas cinemáticas: Activada
+Sincronizar audio durante las escenas cinemáticas - Alternativo
+
+[CutscAudioSync2]
+Sincronizar audio durante las escenas cinemáticas - Sí
 
 [Turn Indicators]
 Indicadores de giro
@@ -187,6 +193,9 @@ Es necesario reiniciar GTA IV para aplicar el ajuste.
 [Extended Sniper]
 Controles extendidos del rifle de francotirador
 
+[Ladders Climb]
+Escalada automática de escaleras
+
 [Bullet Traces]
 Mostrar siempre los rastros de balas
 
@@ -204,6 +213,9 @@ Buffalo policía
 
 [FF_WARN0]
 ~p~Archivos IMG:
+
+[MO_ALT]
+Alternativo
 
 [FF_WARN1]
 ; ~r~NOTA: Se ha superado el límite de 255 IMG, lo que provocará problemas de «streaming». 

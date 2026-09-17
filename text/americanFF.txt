@@ -145,14 +145,20 @@ Centered On Foot Camera
 [Camera Shake]
 Camera Shake
 
+[FE_STEAMPAD]
+Steam Controller
+
 [CutscAudioSync]
 Cutscene Audio Sync
 
 [CutscAudioSync0]
-Cutscene Audio Sync deactivated
+Cutscene Audio Sync - Off
 
 [CutscAudioSync1]
-Cutscene Audio Sync activated
+Cutscene Audio Sync - Alternative
+
+[CutscAudioSync2]
+Cutscene Audio Sync - On
 
 [Turn Indicators]
 Turn Indicators
@@ -187,6 +193,9 @@ GTA IV must be restarted in order to apply settings.
 [Extended Sniper]
 Extended Sniper Controls
 
+[Ladders Climb]
+Auto Climb Ladders
+
 [Bullet Traces]
 Always Show Bullet Traces
 
@@ -204,6 +213,9 @@ Police Buffalo
 
 [FF_WARN0]
 ~p~IMG Files:
+
+[MO_ALT]
+Alternative
 
 [FF_WARN1]
 ; ~r~WARNING: 255 IMG limit exceeded, will cause streaming issues.
